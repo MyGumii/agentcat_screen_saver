@@ -1,0 +1,20 @@
+# Locally extracted Agent Cat artwork (not redistributed)
+assets/*.png
+
+# Build and packaging output
+bin/
+dist/
+tools/*.exe
+
+# Local inspection output
+extracted-assets/
+references/
+preview-*.png
+frame-*.png
+
+# Editor / OS files
+.vs/
+.vscode/
+*.user
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,3 @@
+$ErrorActionPreference='Stop'
+$dir=Join-Path $env:LOCALAPPDATA 'AgentCatScreenSaver'; $backup=Join-Path $dir 'previous-settings.json'; $key='HKCU:\Control Panel\Desktop'
+if (Test-Path $backup) { $p=Get-Content -Raw $backup|ConvertFrom-Json; foreach($n in 'SCRNSAVE.EXE','ScreenSaveActive','ScreenSaveTimeOut','ScreenSaverIsSecure'){ $v=$p.$n; if($null -eq $v){Remove-ItemProperty $key $n -ErrorAction SilentlyContinue}else{Set-ItemProperty $key $n ([string]$v)} }; & (Join-Path $env:WINDIR 'System32\rundll32.exe') user32.dll,UpdatePerUserSystemParameters 1,$true; Write-Host 'Previous screen saver settings restored.' } else { Write-Warning 'No backup found; settings unchanged.' }
