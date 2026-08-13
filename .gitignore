@@ -6,6 +6,11 @@ bin/
 dist/
 tools/*.exe
 
+# Local reverse-engineering helpers used during initial development
+install-prebuilt.ps1
+tools/ExtractEmbeddedPngs.cs
+tools/ExtractEmbeddedPngs.ps1
+
 # Local inspection output
 extracted-assets/
 references/
