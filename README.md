@@ -1,7 +1,7 @@
 # Agent Cat Screen Saver for Windows
 
 Agent Cat의 로컬 사용량 스냅샷을 읽어 Codex와 Claude Code 상태를 보여주는 Windows 화면보호기입니다.
-Codex 또는 Claude가 작업 중이면 Agent Cat Windows 앱의 치즈냥이 프레임이 걷고 달리고 질주합니다.
+Codex 또는 Claude가 작업 중이면 Agent Cat Windows 앱의 치즈냥이가 제자리에서 빠르게 달리고 질주합니다.
 
 ## 주요 기능
 
