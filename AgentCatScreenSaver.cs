@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -23,7 +24,14 @@ namespace AgentCatScreenSaver
             Application.SetCompatibleTextRenderingDefault(false);
 
             string mode = args.Length > 0 ? args[0].ToLowerInvariant() : "/c";
-            if (mode.StartsWith("/s") || mode == "/test")
+            if (mode == "/snapshot")
+            {
+                string output = args.Length > 1 ? args[1] : Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "AgentCatScreenSaver", "lockscreen-preview.png");
+                Saver.SaveSnapshot(output);
+            }
+            else if (mode.StartsWith("/s") || mode == "/test")
                 Application.Run(new Saver(mode == "/test"));
             else
                 MessageBox.Show(
@@ -110,6 +118,33 @@ namespace AgentCatScreenSaver
             };
         }
 
+        public static void SaveSnapshot(string outputPath)
+        {
+            string fullPath = Path.GetFullPath(outputPath);
+            string directory = Path.GetDirectoryName(fullPath);
+            if (!String.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
+
+            using (Saver saver = new Saver(true))
+            {
+                saver.FormBorderStyle = FormBorderStyle.None;
+                saver.ClientSize = new Size(1920, 1080);
+                saver.data = Data.Load();
+                saver.herdr = HerdrState.Load();
+                saver.phase = (DateTime.Now.Minute % 6 + .35f) / 7.5f;
+                saver.stars.Clear();
+                Random seeded = new Random(DateTime.Now.ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture).GetHashCode());
+                for (int i = 0; i < 100; i++)
+                    saver.stars.Add(new PointF(seeded.Next(1920), seeded.Next(1080)));
+
+                using (Bitmap bitmap = new Bitmap(1920, 1080, PixelFormat.Format24bppRgb))
+                using (Graphics graphics = Graphics.FromImage(bitmap))
+                {
+                    saver.DrawScene(graphics);
+                    bitmap.Save(fullPath, ImageFormat.Png);
+                }
+            }
+        }
+
         void QueueRefresh(bool forceAgentCat)
         {
             if (Interlocked.CompareExchange(ref refreshBusy, 1, 0) != 0) return;
@@ -152,7 +187,11 @@ namespace AgentCatScreenSaver
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            Graphics g = e.Graphics;
+            DrawScene(e.Graphics);
+        }
+
+        void DrawScene(Graphics g)
+        {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.Clear(Color.FromArgb(8, 12, 27));
 

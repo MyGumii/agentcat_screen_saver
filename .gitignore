@@ -16,6 +16,9 @@ extracted-assets/
 references/
 preview-*.png
 frame-*.png
+motion-*.png
+lockscreen-*.png
+lockscreen-output-*/
 
 # Editor / OS files
 .vs/

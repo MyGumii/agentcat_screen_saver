@@ -13,6 +13,8 @@ Codex 또는 Claude가 작업 중이거나 Herdr에 `working` 에이전트가 �
 - Herdr 상태 `working`, `blocked`, `done`, `idle`, `unknown`을 구분하고, 개입이 필요한 상태를 먼저 정렬합니다.
 - `activity.countsByProvider`와 `motionStage`를 사용해 고양이 속도를 바꿉니다.
 - Herdr에 작업 중인 에이전트가 있으면 고양이가 질주하고, `blocked` 또는 `done` 상태는 고양이 옆 배지로 알립니다.
+- 실제 Windows 잠금 화면에는 같은 대시보드의 정적 스냅샷을 공식 최소 주기인 1분마다 새로 적용합니다.
+- 화면보호기는 정적화하지 않고 기존처럼 약 30fps 연속 애니메이션으로 동작합니다.
 - 키보드 또는 마우스 입력 시 종료됩니다.
 - 화면보호기에서 복귀할 때 Windows 로그인을 요구하도록 설정합니다.
 - 프롬프트, 응답, 터미널 본문, 소스 코드, 전체 작업 경로, 세션 ID 또는 OAuth 토큰을 표시하지 않습니다.
@@ -71,7 +73,7 @@ agentcat snapshot --json
 herdr status
 herdr api snapshot
 
-# 빌드 + 현재 사용자 화면보호기로 등록 (5분)
+# 빌드 + 화면보호기(5분) + 1분 잠금 화면 갱신 + 즉시 실행 단축키 설치
 powershell -ExecutionPolicy Bypass -File .\install.ps1 -TimeoutSeconds 300
 ```
 
@@ -79,6 +81,8 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -TimeoutSeconds 300
 
 ```text
 %LOCALAPPDATA%\AgentCatScreenSaver\AgentCatScreenSaver.scr
+%LOCALAPPDATA%\AgentCatScreenSaver\AgentCatScreenSaver.exe
+%LOCALAPPDATA%\AgentCatScreenSaver\LockScreen\agentcat-lock-*.png
 ```
 
 Windows 설정은 다음과 같이 적용됩니다.
@@ -87,26 +91,40 @@ Windows 설정은 다음과 같이 적용됩니다.
 - 대기 시간: 기본 300초
 - 다시 시작할 때 로그온 화면 표시: 켜짐
 - 기존 설정: 최초 설치 시 `previous-settings.json`으로 백업
+- 잠금 화면 이전 이미지: 최초 설치 시 `previous-lockscreen.json`으로 백업
+- 잠금 화면 갱신: 예약 작업 `AgentCatLockScreenUpdater`, 1분 간격
+- 즉시 화면보호기 실행: 바탕 화면 바로가기 또는 `Ctrl+Alt+A`
 
 ## Windows 잠금 화면과의 차이
 
 Windows의 실제 잠금 화면과 로그인 UI는 보안 데스크톱에서 실행되므로 일반 `.scr` 프로그램을 그 위에
-실시간 애니메이션으로 표시할 수 없습니다. Windows가 공식 지원하는 사용자 지정 잠금 화면은 정적
-JPG/JPEG/PNG 배경 이미지입니다.
+실시간 애니메이션으로 표시할 수 없습니다. 대신 이 프로젝트는 Agent Cat과 Herdr 상태를 1920×1080
+PNG로 렌더링하고 Windows `LockScreen.SetImageFileAsync` API로 적용합니다.
 
 따라서 이 프로젝트는 다음과 같이 동작합니다.
 
-1. PC가 유휴 상태가 되면 Agent Cat + Herdr 화면보호기가 실시간으로 표시됩니다.
-2. 키보드나 마우스를 입력하면 화면보호기가 종료됩니다.
-3. `ScreenSaverIsSecure=1` 설정에 따라 Windows 로그인 화면으로 전환됩니다.
+1. PC가 유휴 상태가 되면 Agent Cat + Herdr 화면보호기가 연속 애니메이션으로 표시됩니다.
+2. 예약 작업은 로그인 세션이 유지되는 동안 잠금 여부와 관계없이 1분마다 새 PNG를 만들고 적용합니다.
+3. `Win+L`로 잠그면 가장 최근에 적용된 정적 대시보드가 Windows 잠금 화면에 표시됩니다.
+4. 화면보호기에서 입력하면 `ScreenSaverIsSecure=1` 설정에 따라 Windows 로그인 화면으로 전환됩니다.
 
-`Win+L`로 즉시 잠그면 Windows 자체 잠금 화면이 표시되며, 그 위에는 Agent Cat 애니메이션이 표시되지
-않습니다. 보안 데스크톱을 우회하거나 로그인 UI를 교체하는 방식은 사용하지 않습니다.
+작업 스케줄러가 공식 지원하는 반복 간격의 최솟값은 1분입니다. 10초 주기는 공식 스키마 범위 밖이므로
+사용하지 않습니다. 또한 Windows가 이미 표시 중인 잠금 화면을 언제 다시 그릴지는 OS 캐시에 따라 달라질
+수 있지만, 배경 이미지 파일과 사용자 잠금 화면 설정 자체는 매분 갱신됩니다. 보안 데스크톱을 우회하거나
+로그인 UI를 교체하지 않습니다.
 
 참고 문서:
 
 - [Microsoft Learn: Configure the Desktop and Lock Screen Backgrounds in Windows](https://learn.microsoft.com/windows/configuration/background/)
 - [Microsoft Learn: Credentials Processes in Windows Authentication](https://learn.microsoft.com/windows-server/security/windows-authentication/credentials-processes-in-windows-authentication)
+- [Microsoft Learn: Task Scheduler repetition interval](https://learn.microsoft.com/windows/win32/taskschd/taskschedulerschema-interval-repetitiontype-element)
+
+잠금 화면 갱신 확인:
+
+```powershell
+Get-ScheduledTaskInfo -TaskName AgentCatLockScreenUpdater
+Get-Content "$env:LOCALAPPDATA\AgentCatScreenSaver\LockScreen\status.json"
+```
 
 ## 미리보기
 
@@ -122,6 +140,19 @@ Start-Process .\bin\AgentCatScreenSaver.scr -ArgumentList /s
 ```
 
 마우스 또는 키보드 입력으로 종료됩니다.
+
+## 즉시 화면보호기 실행
+
+Windows에는 `Win+L`과 같은 기본 화면보호기 단축키가 없습니다. 설치 스크립트가 다음 두 가지를 만듭니다.
+
+- 바탕 화면의 `Agent Cat Screen Saver` 바로가기
+- 전역 단축키 `Ctrl+Alt+A`
+
+명령으로 직접 실행하려면:
+
+```powershell
+Start-Process "$env:LOCALAPPDATA\AgentCatScreenSaver\AgentCatScreenSaver.scr" -ArgumentList /s
+```
 
 ## Herdr 연동
 
@@ -180,8 +211,10 @@ https://github.com/MyGumii/agentcat_screen_saver
 6. Run the /test preview and confirm the orange Agent Cat animates.
 7. If Claude Code is installed, run agentcat doctor --json and confirm Claude hooks/login/usage status.
 8. If Herdr is installed, run herdr status and herdr api snapshot; confirm the preview shows live agent states.
-9. Use agentcat snapshot --json as the source of truth. Never estimate quotas that are absent from the snapshot.
-10. Do not upload or report prompts, responses, terminal output, source code, credentials, or conversation bodies.
+9. Verify AgentCatLockScreenUpdater has a PT1M repetition interval and status.json reports applied=true.
+10. Verify the desktop shortcut starts the continuous /s screen saver and uses Ctrl+Alt+A.
+11. Use agentcat snapshot --json as the source of truth. Never estimate quotas that are absent from the snapshot.
+12. Do not upload or report prompts, responses, terminal output, source code, credentials, or conversation bodies.
 ```
 
 ## 수동 빌드
@@ -203,6 +236,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1
 
 - `/s`: 전체 화면 실행
 - `/test`: 크기 조절 가능한 미리보기
+- `/snapshot <PNG 경로>`: 잠금 화면용 1920×1080 정적 대시보드 생성
 - `/c`: 정보 창
 
 ## 제거 및 이전 설정 복원
@@ -211,7 +245,8 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1
 powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 ```
 
-최초 설치 전에 백업한 사용자 화면보호기 설정으로 복원합니다.
+예약 작업과 바탕 화면 단축키를 제거하고, 최초 설치 전에 백업한 화면보호기 설정 및 잠금 화면 이미지를
+복원합니다.
 
 ## 문제 해결
 
@@ -257,12 +292,25 @@ agentcat snapshot --json
 화면보호기는 먼저 `http://127.0.0.1:8765/v1/snapshot`을 읽고, 데몬에 접근할 수 없으면
 `%USERPROFILE%\.agentcat\latest-snapshot.json`으로 대체합니다.
 
+### 잠금 화면 이미지가 갱신되지 않음
+
+```powershell
+Get-ScheduledTask -TaskName AgentCatLockScreenUpdater
+Get-ScheduledTaskInfo -TaskName AgentCatLockScreenUpdater
+Get-Content "$env:LOCALAPPDATA\AgentCatScreenSaver\LockScreen\status.json"
+Start-ScheduledTask -TaskName AgentCatLockScreenUpdater
+```
+
+`status.json`의 `applied`가 `true`이고 `image` 파일명이 매분 바뀌면 생성과 Windows API 적용은
+정상입니다. 이미 열려 있는 잠금 화면의 즉시 재표시는 Windows 캐시 정책에 영향을 받을 수 있습니다.
+
 ## 개인정보 및 네트워크
 
 - 화면보호기는 loopback 주소 `127.0.0.1` 외의 서버로 데이터를 보내지 않습니다.
 - Agent Cat 스냅샷의 메타데이터만 사용합니다.
 - Herdr에서는 로컬 스냅샷의 상태·개수·표시용 이름·포커스 여부만 사용합니다.
 - `herdr agent read`를 호출하지 않으며 프롬프트, 응답, 터미널 출력, 코드, 파일 내용과 대화 본문은 표시하거나 저장하지 않습니다.
+- 잠금 화면 PNG는 로컬 `%LOCALAPPDATA%\AgentCatScreenSaver\LockScreen`에만 저장하며 최근 5장만 유지합니다.
 - 사용량 API와 쿼터 수집 방식은 Agent Cat connector의 동작을 따릅니다.
 
 ## 라이선스 및 Agent Cat 에셋
