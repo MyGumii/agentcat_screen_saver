@@ -411,20 +411,6 @@ namespace AgentCatScreenSaver
                 sourceWidth, sourceHeight);
             g.DrawImage(catSheet, destination, source, GraphicsUnit.Pixel);
 
-            if (run)
-            {
-                using (Pen speedLine = new Pen(Color.FromArgb(sprint ? 140 : 92, 110, 194, 255), 3 * scale))
-                {
-                    float speedY = y + drawHeight * .45f;
-                    for (int i = 0; i < 3; i++)
-                    {
-                        float length = (sprint ? 64 : 48) * scale + i * 20 * scale;
-                        g.DrawLine(speedLine, x - length - 16 * scale,
-                            speedY + i * 20 * scale, x - 13 * scale, speedY + i * 20 * scale);
-                    }
-                }
-            }
-
             if (herdr.blocked > 0)
                 DrawCatBadge(g, x + drawWidth * .67f, y - 7 * scale,
                     "!  BLOCKED " + herdr.blocked, Color.FromArgb(246, 101, 112), scale);

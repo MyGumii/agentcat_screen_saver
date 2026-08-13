@@ -88,6 +88,26 @@ Windows 설정은 다음과 같이 적용됩니다.
 - 다시 시작할 때 로그온 화면 표시: 켜짐
 - 기존 설정: 최초 설치 시 `previous-settings.json`으로 백업
 
+## Windows 잠금 화면과의 차이
+
+Windows의 실제 잠금 화면과 로그인 UI는 보안 데스크톱에서 실행되므로 일반 `.scr` 프로그램을 그 위에
+실시간 애니메이션으로 표시할 수 없습니다. Windows가 공식 지원하는 사용자 지정 잠금 화면은 정적
+JPG/JPEG/PNG 배경 이미지입니다.
+
+따라서 이 프로젝트는 다음과 같이 동작합니다.
+
+1. PC가 유휴 상태가 되면 Agent Cat + Herdr 화면보호기가 실시간으로 표시됩니다.
+2. 키보드나 마우스를 입력하면 화면보호기가 종료됩니다.
+3. `ScreenSaverIsSecure=1` 설정에 따라 Windows 로그인 화면으로 전환됩니다.
+
+`Win+L`로 즉시 잠그면 Windows 자체 잠금 화면이 표시되며, 그 위에는 Agent Cat 애니메이션이 표시되지
+않습니다. 보안 데스크톱을 우회하거나 로그인 UI를 교체하는 방식은 사용하지 않습니다.
+
+참고 문서:
+
+- [Microsoft Learn: Configure the Desktop and Lock Screen Backgrounds in Windows](https://learn.microsoft.com/windows/configuration/background/)
+- [Microsoft Learn: Credentials Processes in Windows Authentication](https://learn.microsoft.com/windows-server/security/windows-authentication/credentials-processes-in-windows-authentication)
+
 ## 미리보기
 
 ```powershell
