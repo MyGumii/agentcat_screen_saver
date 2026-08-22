@@ -7,6 +7,12 @@ $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $MyInvocation.MyCommand.Path
 & (Join-Path $root 'build.ps1')
 $dir=Join-Path $env:LOCALAPPDATA 'AgentCatScreenSaver'
+if(Get-ScheduledTask -TaskName 'AgentCatLockScreenUpdater' -ErrorAction SilentlyContinue){
+    Stop-ScheduledTask -TaskName 'AgentCatLockScreenUpdater' -ErrorAction SilentlyContinue
+    for($i=0;$i-lt 50 -and (Get-ScheduledTask -TaskName 'AgentCatLockScreenUpdater').State -eq 'Running';$i++){
+        Start-Sleep -Milliseconds 100
+    }
+}
 New-Item -ItemType Directory -Path $dir -Force | Out-Null
 Copy-Item (Join-Path $root 'bin\AgentCatScreenSaver.scr') (Join-Path $dir 'AgentCatScreenSaver.scr') -Force
 Copy-Item (Join-Path $root 'bin\AgentCatScreenSaver.exe') (Join-Path $dir 'AgentCatScreenSaver.exe') -Force

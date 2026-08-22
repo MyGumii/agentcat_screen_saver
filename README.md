@@ -93,6 +93,7 @@ Windows 설정은 다음과 같이 적용됩니다.
 - 기존 설정: 최초 설치 시 `previous-settings.json`으로 백업
 - 잠금 화면 이전 이미지: 최초 설치 시 `previous-lockscreen.json`으로 백업
 - 잠금 화면 갱신: 예약 작업 `AgentCatLockScreenUpdater`, 1분 간격
+- 예약 작업은 `wscript.exe //B //Nologo` 숨김 실행기를 사용해 PowerShell 창이 깜빡이지 않도록 실행
 - 즉시 화면보호기 실행: 바탕 화면 바로가기 또는 `Ctrl+Alt+A`
 
 ## Windows 잠금 화면과의 차이
@@ -125,6 +126,10 @@ PNG로 렌더링하고 Windows `LockScreen.SetImageFileAsync` API로 적용합�
 Get-ScheduledTaskInfo -TaskName AgentCatLockScreenUpdater
 Get-Content "$env:LOCALAPPDATA\AgentCatScreenSaver\LockScreen\status.json"
 ```
+
+예약 작업의 실행 프로그램은 `%WINDIR%\System32\wscript.exe`이고, 인수로
+`run-lockscreen-update-hidden.vbs`를 전달합니다. VBS는 PowerShell 자식 프로세스를 창 스타일 `0`으로
+시작하므로 `-WindowStyle Hidden`만 사용할 때 생길 수 있는 짧은 콘솔 창 깜빡임을 방지합니다.
 
 ## 미리보기
 
@@ -303,6 +308,9 @@ Start-ScheduledTask -TaskName AgentCatLockScreenUpdater
 
 `status.json`의 `applied`가 `true`이고 `image` 파일명이 매분 바뀌면 생성과 Windows API 적용은
 정상입니다. 이미 열려 있는 잠금 화면의 즉시 재표시는 Windows 캐시 정책에 영향을 받을 수 있습니다.
+
+1분마다 PowerShell 창이 잠깐 보인다면 예약 작업의 `Actions.Execute`가 `wscript.exe`인지 확인하고
+`install.ps1`을 다시 실행합니다. 최신 설치는 PowerShell을 예약 작업에서 직접 실행하지 않습니다.
 
 ## 개인정보 및 네트워크
 
